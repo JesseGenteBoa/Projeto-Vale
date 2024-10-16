@@ -316,8 +316,16 @@ for i, pasta in enumerate(os.listdir("Processos")):
 
     interagente.interagir_pagina_web(xpath='/html/body/span/span/span[1]/input', acao="Escrever", texto=municipio_prest_serv)
     sleep(3)
-    press("enter") 
-    sleep(120)
+    press("enter", interval=1)
+
+
+    elemento_municipio = interagente.interagir_pagina_web(xpath='/html/body/main/div/div/div/div/form/div/div/div/div[1]/div/div[7]/div/div/div[2]/div/div/div/div/div[2]/span/span[1]/span/span[1]', acao="Retornar elemento")
+    municipio_no_campo = elemento_municipio.get_attribute('title')
+    while municipio_no_campo != municipio_prest_serv[4:]:
+        elemento_municipio = interagente.interagir_pagina_web(xpath='/html/body/main/div/div/div/div/form/div/div/div/div[1]/div/div[7]/div/div/div[2]/div/div/div/div/div[2]/span/span[1]/span/span[1]', acao="Retornar elemento")
+        municipio_no_campo = elemento_municipio.get_attribute('title')
+        sleep(1)
+        
 
     interagente.interagir_pagina_web(xpath='/html/body/main/div/div/div/div/form/div/div/div/div[2]/div/div/button', acao="Clicar")
 
@@ -325,8 +333,7 @@ for i, pasta in enumerate(os.listdir("Processos")):
 
     interagente.interagir_pagina_web(xpath='/html/body/main/div/div[4]/div/div/div[1]/div[1]/ul/li[1]/a', acao="Esperar")
 
-
     
-sleep(15)
+sleep(1)
 
 
