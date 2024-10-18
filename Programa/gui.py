@@ -72,7 +72,7 @@ canvas = Canvas(
 
 canvas.place(x = 0, y = 0)
 image_image_1 = PhotoImage(
-    file=caminho_dos_recursos("image_1.png"))
+    file=caminho_dos_recursos("Imagem de fundo.png"))
 image_1 = canvas.create_image(
     469.0,
     157.0,
