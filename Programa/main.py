@@ -305,7 +305,6 @@ def executar_automacao(nf_inicial, nf_final, pasta_rf, caminho_arq_excel):
         estado = partes[1].strip()
     
         municipio_prest_serv = f"{estado}, {cidade}"
-    
         interagente.interagir_pagina_web(xpath='/html/body/span/span/span[1]/input', acao="Escrever", texto=municipio_prest_serv)
         sleep(3)
         press("enter", interval=1)
