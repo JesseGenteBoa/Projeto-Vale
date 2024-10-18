@@ -57,7 +57,7 @@ y = str((screen_height - 600) // 2)
 window.geometry(f"939x315+{x}+{y}")
 window.configure(bg = "#FFFFFF")
 window.title("Automação Faturamento Vale")
-window.iconbitmap(r"Imagens\robozinho.ico")
+window.iconbitmap(caminho_dos_recursos("robozinho.ico"))
 
 
 canvas = Canvas(
