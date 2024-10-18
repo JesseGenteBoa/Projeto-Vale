@@ -313,7 +313,7 @@ def executar_automacao(nf_inicial, nf_final, pasta_rf, caminho_arq_excel):
     
         elemento_municipio = interagente.interagir_pagina_web(xpath='/html/body/main/div/div/div/div/form/div/div/div/div[1]/div/div[7]/div/div/div[2]/div/div/div/div/div[2]/span/span[1]/span/span[1]', acao="Retornar elemento")
         municipio_no_campo = elemento_municipio.get_attribute('title')
-        while municipio_no_campo != municipio_prest_serv[4:]:
+        while municipio_no_campo != cidade:
             elemento_municipio = interagente.interagir_pagina_web(xpath='/html/body/main/div/div/div/div/form/div/div/div/div[1]/div/div[7]/div/div/div[2]/div/div/div/div/div[2]/span/span[1]/span/span[1]', acao="Retornar elemento")
             municipio_no_campo = elemento_municipio.get_attribute('title')
             sleep(1)
