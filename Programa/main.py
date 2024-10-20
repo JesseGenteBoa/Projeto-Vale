@@ -144,7 +144,7 @@ def executar_automacao(nf_inicial, nf_final, pasta_rf, caminho_arq_excel):
     hotkey('ctrl', 'w', interval=0.5)
     interagente.fechar_driver()
     
-    pasta_downloads = Path(os.path.join(Path.home(), "Downloads"))
+    pasta_downloads = Path.home() / "Downloads")
     caminho_completo = pasta_downloads / nome_do_arquivo
     caminho_original = str(caminho_completo.resolve())
     
