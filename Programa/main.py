@@ -89,9 +89,9 @@ def executar_automacao(nf_inicial, nf_final, pasta_rf, caminho_arq_excel):
     
     hotkey('ctrl', 's')
     sleep(3)
+
     
-    pasta = "NFS"
-    caminho_absoluto = str(Path(pasta).resolve())
+    caminho_absoluto = str(Path("NFS").resolve())
     arquivo_nfs = caminho_absoluto + "\\PDF_NFS.pdf"
     copy(arquivo_nfs)
     hotkey('ctrl', 'v', interval=0.5)
