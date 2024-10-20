@@ -155,11 +155,11 @@ def executar_automacao(nf_inicial, nf_final, pasta_rf, caminho_arq_excel):
     shutil.move(caminho_original, novo_caminho)
     
     
+    venctos = []
+    lista_cc = []
+    nfs_canceladas = []
     dict_venctos = {}
     dict_cc = {}
-    nfs_canceladas = []
-    lista_cc = []
-    venctos = []
     
     xml = utils.ler_xml(novo_caminho)
     conjunto_xmls = xml["ConsultarNfseServicoPrestadoResposta"]["ListaNfse"]["CompNfse"]
@@ -169,12 +169,9 @@ def executar_automacao(nf_inicial, nf_final, pasta_rf, caminho_arq_excel):
         for xml in conjunto_xmls:
             
             numero_nf, rf, cc, vencto = utils.extrair_dados(xml)
-            nome_do_arquivo = "NFS " + numero_nf + " - RF " + rf
-            caminho_xml = "XML\\" + nome_do_arquivo + ".xml"
+            caminho_xml = "XML\\NFS " + numero_nf + " - RF " + rf + ".xml"
             dict_venctos[numero_nf] = vencto
-            dict_venctos = dict(sorted(dict_venctos.items()))
             dict_cc[numero_nf] = cc
-            dict_cc = dict(sorted(dict_cc.items()))
     
             xml_completo = {
                 "ConsultarNfseServicoPrestadoResposta" : {
@@ -194,6 +191,8 @@ def executar_automacao(nf_inicial, nf_final, pasta_rf, caminho_arq_excel):
                     arquivo_xml.write(nfs)
             
         os.remove(novo_caminho)
+        dict_venctos = dict(sorted(dict_venctos.items()))
+        dict_cc = dict(sorted(dict_cc.items()))
         venctos = list(dict_venctos.values())
         lista_cc = list(dict_cc.values())
     
@@ -202,9 +201,9 @@ def executar_automacao(nf_inicial, nf_final, pasta_rf, caminho_arq_excel):
         nome_do_arquivo = str(diretorio_destino) + "\\NFS " + numero_nf + " - RF " + rf + ".xml"
         nome_antigo = novo_caminho
         os.rename(nome_antigo, nome_do_arquivo)
-        lista_cc.append(cc)
         venctos.append(vencto)
-    
+        lista_cc.append(cc)
+       
     
     venctos_convertidos = [datetime.strptime(data, "%d/%m/%y").strftime("%Y-%m-%d") for data in venctos]
 
@@ -236,8 +235,8 @@ def executar_automacao(nf_inicial, nf_final, pasta_rf, caminho_arq_excel):
     
     df = pd.read_excel(caminho_arq_excel)
     lista_de_cc = df.iloc[4:, 1].tolist()
-    lista_de_email = df.iloc[4:, 2].tolist()
-    dicionario_de_emails = dict(zip(lista_de_cc, lista_de_email))
+    lista_de_emails = df.iloc[4:, 2].tolist()
+    dict_de_emails = dict(zip(lista_de_cc, lista_de_emails))
     
     
     
@@ -285,7 +284,7 @@ def executar_automacao(nf_inicial, nf_final, pasta_rf, caminho_arq_excel):
                 sleep(3)
     
     
-        interagente.interagir_pagina_web(xpath='/html/body/main/div/div/div/div/form/div/div/div/div[1]/div/div[3]/div/div/div[2]/div/div/div/div/div/input', acao="Escrever", texto=dicionario_de_emails[lista_cc[i]])
+        interagente.interagir_pagina_web(xpath='/html/body/main/div/div/div/div/form/div/div/div/div[1]/div/div[3]/div/div/div[2]/div/div/div/div/div/input', acao="Escrever", texto=dict_de_emails[lista_cc[i]])
     
         interagente.interagir_javaScript(venctos_convertidos, i, id= 'tax_document_net_due_date')
     
@@ -308,16 +307,14 @@ def executar_automacao(nf_inicial, nf_final, pasta_rf, caminho_arq_excel):
         interagente.interagir_pagina_web(xpath='/html/body/span/span/span[1]/input', acao="Escrever", texto=municipio_prest_serv)
         sleep(3)
         press("enter", interval=1)
-    
-    
-        elemento_municipio = interagente.interagir_pagina_web(xpath='/html/body/main/div/div/div/div/form/div/div/div/div[1]/div/div[7]/div/div/div[2]/div/div/div/div/div[2]/span/span[1]/span/span[1]', acao="Retornar elemento")
-        municipio_no_campo = elemento_municipio.get_attribute('title')
-        while municipio_no_campo != cidade:
+
+        while True:
             elemento_municipio = interagente.interagir_pagina_web(xpath='/html/body/main/div/div/div/div/form/div/div/div/div[1]/div/div[7]/div/div/div[2]/div/div/div/div/div[2]/span/span[1]/span/span[1]', acao="Retornar elemento")
             municipio_no_campo = elemento_municipio.get_attribute('title')
+            if municipio_no_campo == cidade:
+                break
             sleep(1)
-            
-    
+
         interagente.interagir_pagina_web(xpath='/html/body/main/div/div/div/div/form/div/div/div/div[2]/div/div/button', acao="Clicar")
     
         interagente.migrar_ao_frame(acao="Aceitar alerta")
