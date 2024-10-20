@@ -23,6 +23,10 @@ def selecionar_planilha():
     caminho_arq_excel = askopenfilename(title="Selecione a planilha de E-mails dos gestores.", filetypes=[("Excel Files", "*.xls;*.xlsx;*.xlsm;*.xlsb"), ("CSV Files", "*.csv")])
 
 
+def validar_input(P):
+    return P == "" or P.isdigit()
+
+
 def acionar_automacao():
     nf_inicial = entry_1.get()
     nf_final = entry_2.get()
@@ -44,11 +48,6 @@ def acionar_automacao():
 
 window = Tk()
 
-def validate_input(P):
-    return P == "" or P.isdigit()
-
-vcmd = (window.register(validate_input), '%P')
-
 screen_width = window.winfo_screenwidth()
 screen_height = window.winfo_screenheight()
 x = str((screen_width - 900) // 2)
@@ -59,6 +58,7 @@ window.configure(bg = "#FFFFFF")
 window.title("Automação Faturamento Vale")
 window.iconbitmap(caminho_dos_recursos("robozinho.ico"))
 
+vcmd = (window.register(validar_input), '%P')
 
 canvas = Canvas(
     window,
