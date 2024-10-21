@@ -87,10 +87,8 @@ def executar_automacao(nf_inicial, nf_final, pasta_rf, caminho_arq_excel):
         aux+=1
         sleep(1)
     
-    hotkey('ctrl', 's')
-    sleep(3)
+    hotkey('ctrl', 's', interval=3)
 
-    
     caminho_absoluto = str(Path("NFS").resolve())
     arquivo_nfs = caminho_absoluto + "\\PDF_NFS.pdf"
     copy(arquivo_nfs)
@@ -125,8 +123,7 @@ def executar_automacao(nf_inicial, nf_final, pasta_rf, caminho_arq_excel):
     
     
     sleep(7)
-    hotkey('ctrl', 'j', interval=0.5)
-    sleep(1)
+    hotkey('ctrl', 'j', interval=1.5)
     
     press(["tab"]*3)
     press("enter", interval=0.3)
@@ -144,7 +141,7 @@ def executar_automacao(nf_inicial, nf_final, pasta_rf, caminho_arq_excel):
     hotkey('ctrl', 'w', interval=0.5)
     interagente.fechar_driver()
     
-    pasta_downloads = Path.home() / "Downloads")
+    pasta_downloads = Path.home() / "Downloads"
     caminho_completo = pasta_downloads / nome_do_arquivo
     caminho_original = str(caminho_completo.resolve())
     
