@@ -1,4 +1,3 @@
-from selenium.webdriver.remote.webelement import WebElement
 from datetime import datetime
 from pyautogui import hotkey, press
 from pyperclip import paste, copy
