@@ -129,7 +129,7 @@ def executar_automacao(nf_inicial, nf_final, pasta_rf, caminho_arq_excel):
     press("enter", interval=0.3)
     press("down")
     press("enter", interval=0.8)
-    press("tab")
+    press(["tab"]*4)
     press("enter", interval=3)
     press("f2", interval=0.5)
     hotkey('ctrl', 'c', interval=0.5)
@@ -168,7 +168,7 @@ def executar_automacao(nf_inicial, nf_final, pasta_rf, caminho_arq_excel):
             numero_nf, rf, cc, vencto = utils.extrair_dados(xml)
             caminho_xml = "XML\\NFS " + numero_nf + " - RF " + rf + ".xml"
             dict_venctos[numero_nf] = vencto
-            dict_cc[numero_nf] = cc
+            dict_cc[numero_nf] = cc.strip().upper()
     
             xml_completo = {
                 "ConsultarNfseServicoPrestadoResposta" : {
@@ -232,7 +232,9 @@ def executar_automacao(nf_inicial, nf_final, pasta_rf, caminho_arq_excel):
     
     df = pd.read_excel(caminho_arq_excel)
     lista_de_cc = df.iloc[4:, 1].tolist()
+    lista_de_cc = [cc.strip().upper() for cc in lista_de_cc]
     lista_de_emails = df.iloc[4:, 2].tolist()
+    lista_de_emails = [email.strip() for email in lista_de_emails]
     dict_de_emails = dict(zip(lista_de_cc, lista_de_emails))
     
     
@@ -256,7 +258,6 @@ def executar_automacao(nf_inicial, nf_final, pasta_rf, caminho_arq_excel):
         
         interagente.interagir_pagina_web(xpath='/html/body/header/nav[2]/ul/li[5]/div/a[1]/span', acao="Clicar")
         
-    
         diretorio_processo = Path("Processos").resolve() / pasta
     
         caminho_pdf_nfs = utils.retornar_caminho(diretorio_processo, pasta[pasta.find("NFS"):pasta.find(" - RF")])
@@ -264,22 +265,25 @@ def executar_automacao(nf_inicial, nf_final, pasta_rf, caminho_arq_excel):
         caminho_xml = utils.retornar_caminho(diretorio_processo, pasta, extensao=".xml")
     
     
-        while True:
-            interagente.inserir_arquivos(xpath='/html/body/main/div/div/div/div/form/div/div/div/div[1]/div/div[2]/div[1]/input', xpath_de_espera="/html/body/main/div/div/div/div/form/div/div/div/div[1]/div/div[2]/div[1]/p/span/a", arquivo=caminho_xml)
+        def inserir_arquivos():
+            sleep(3)
+            interagente.inserir_arquivo(xpath='/html/body/main/div/div/div/div/form/div/div/div/div[1]/div/div[2]/div[1]/input', xpath_de_espera="/html/body/main/div/div/div/div/form/div/div/div/div[1]/div/div[2]/div[1]/p/span/a", arquivo=caminho_xml)
     
-            interagente.inserir_arquivos(xpath='/html/body/main/div/div/div/div/form/div/div/div/div[1]/div/div[2]/div[2]/input', xpath_de_espera="/html/body/main/div/div/div/div/form/div/div/div/div[1]/div/div[2]/div[2]/p/span/a", arquivo=caminho_pdf_nfs)
-    
-            interagente.inserir_arquivos(xpath='/html/body/main/div/div/div/div/form/div/div/div/div[1]/div/div[2]/div[3]/input', xpath_de_espera="/html/body/main/div/div/div/div/form/div/div/div/div[1]/div/div[2]/div[3]/p/span/a", arquivo=caminho_pdf_rf)
+            if interagente.verificar_instabilidade(verificar = "Um de cada vez"):
+                return inserir_arquivos()
             
-            arquivo1_inserido = interagente.interagir_pagina_web(xpath="/html/body/main/div/div/div/div/form/div/div/div/div[1]/div/div[2]/div[1]/p/span/a", acao="Retornar elemento")
-            arquivo2_inserido = interagente.interagir_pagina_web(xpath="/html/body/main/div/div/div/div/form/div/div/div/div[1]/div/div[2]/div[2]/p/span/a", acao="Retornar elemento")
-            arquivo3_inserido = interagente.interagir_pagina_web(xpath="/html/body/main/div/div/div/div/form/div/div/div/div[1]/div/div[2]/div[3]/p/span/a", acao="Retornar elemento")
-            if all(isinstance(elemento, WebElement) for elemento in [arquivo1_inserido, arquivo2_inserido, arquivo3_inserido]):
-                break
-            else:
-                press("f5")
-                sleep(3)
+            interagente.inserir_arquivo(xpath='/html/body/main/div/div/div/div/form/div/div/div/div[1]/div/div[2]/div[2]/input', xpath_de_espera="/html/body/main/div/div/div/div/form/div/div/div/div[1]/div/div[2]/div[2]/p/span/a", arquivo=caminho_pdf_nfs)
     
+            if interagente.verificar_instabilidade(verificar = "Um de cada vez"):
+                return inserir_arquivos()
+
+            interagente.inserir_arquivo(xpath='/html/body/main/div/div/div/div/form/div/div/div/div[1]/div/div[2]/div[3]/input', xpath_de_espera="/html/body/main/div/div/div/div/form/div/div/div/div[1]/div/div[2]/div[3]/p/span/a", arquivo=caminho_pdf_rf)
+        
+            if interagente.verificar_instabilidade(verificar = "Todos de uma vez"):
+                return inserir_arquivos()
+            
+
+        inserir_arquivos()
     
         interagente.interagir_pagina_web(xpath='/html/body/main/div/div/div/div/form/div/div/div/div[1]/div/div[3]/div/div/div[2]/div/div/div/div/div/input', acao="Escrever", texto=dict_de_emails[lista_cc[i]])
     
@@ -305,20 +309,22 @@ def executar_automacao(nf_inicial, nf_final, pasta_rf, caminho_arq_excel):
         sleep(3)
         press("enter", interval=1)
 
+        aux=0
         while True:
             elemento_municipio = interagente.interagir_pagina_web(xpath='/html/body/main/div/div/div/div/form/div/div/div/div[1]/div/div[7]/div/div/div[2]/div/div/div/div/div[2]/span/span[1]/span/span[1]', acao="Retornar elemento")
             municipio_no_campo = elemento_municipio.get_attribute('title')
             if municipio_no_campo == cidade:
                 break
+            aux+=1
             sleep(1)
+            if aux == 6:
+                break
 
         interagente.interagir_pagina_web(xpath='/html/body/main/div/div/div/div/form/div/div/div/div[2]/div/div/button', acao="Clicar")
     
         interagente.migrar_ao_frame(acao="Aceitar alerta")
     
         interagente.interagir_pagina_web(xpath='/html/body/main/div/div[4]/div/div/div[1]/div[1]/ul/li[1]/a', acao="Esperar")
-    
-        
+        sleep(3)
+           
     sleep(10)
-    
-    
