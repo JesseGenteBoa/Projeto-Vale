@@ -21,7 +21,7 @@ class Interagente:
         self.driver.maximize_window()
 
 
-    def interagir_pagina_web(self, xpath, acao, texto="", cronometrar_espera=False, cronometrar_retorno=False):
+    def interagir_pagina_web(self, xpath, acao, texto="", limitar_espera=False, limitar_retorno=False):
         aux = 0
         while True:
             try:
@@ -40,9 +40,9 @@ class Interagente:
                 break
             except:
                 sleep(1)
-                if cronometrar_espera == True:
+                if limitar_espera == True:
                     aux+=1
-                if cronometrar_retorno == True:
+                if limitar_retorno == True:
                     aux+=7.5
                 if aux == 15:
                     break
@@ -50,7 +50,7 @@ class Interagente:
 
     def inserir_arquivo(self, xpath, xpath_de_espera, arquivo):
         self.interagir_pagina_web(xpath, acao="Escrever", texto=arquivo)
-        self.interagir_pagina_web(xpath_de_espera, acao="Esperar", cronometrar_espera=True)
+        self.interagir_pagina_web(xpath_de_espera, acao="Esperar", limitar_espera=True)
 
 
     def migrar_ao_frame(self, acao, indice=0):
@@ -76,9 +76,9 @@ class Interagente:
 
 
     def verificar_instabilidade(self, verificar):
-        arquivo1_inserido = self.interagir_pagina_web(xpath="/html/body/main/div/div/div/div/form/div/div/div/div[1]/div/div[2]/div[1]/p/span/a", acao="Retornar elemento", cronometrar_retorno=True)
-        arquivo2_inserido = self.interagir_pagina_web(xpath="/html/body/main/div/div/div/div/form/div/div/div/div[1]/div/div[2]/div[2]/p/span/a", acao="Retornar elemento", cronometrar_retorno=True)
-        arquivo3_inserido = self.interagir_pagina_web(xpath="/html/body/main/div/div/div/div/form/div/div/div/div[1]/div/div[2]/div[3]/p/span/a", acao="Retornar elemento", cronometrar_retorno=True)
+        arquivo1_inserido = self.interagir_pagina_web(xpath="/html/body/main/div/div/div/div/form/div/div/div/div[1]/div/div[2]/div[1]/p/span/a", acao="Retornar elemento", limitar_retorno=True)
+        arquivo2_inserido = self.interagir_pagina_web(xpath="/html/body/main/div/div/div/div/form/div/div/div/div[1]/div/div[2]/div[2]/p/span/a", acao="Retornar elemento", limitar_retorno=True)
+        arquivo3_inserido = self.interagir_pagina_web(xpath="/html/body/main/div/div/div/div/form/div/div/div/div[1]/div/div[2]/div[3]/p/span/a", acao="Retornar elemento", limitar_retorno=True)
         if verificar == "Um de cada vez":   
             if any(isinstance(elemento, WebElement) for elemento in [arquivo1_inserido, arquivo2_inserido, arquivo3_inserido]):
                 return False
