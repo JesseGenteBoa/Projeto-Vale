@@ -253,9 +253,15 @@ def executar_automacao(nf_inicial, nf_final, pasta_rf, caminho_arq_excel):
     
     for i, pasta in enumerate(os.listdir("Processos")):
     
-        interagente.interagir_pagina_web(xpath='/html/body/header/nav[2]/ul/li[5]/a', acao="Clicar")
-        
-        interagente.interagir_pagina_web(xpath='/html/body/header/nav[2]/ul/li[5]/div/a[1]/span', acao="Clicar")
+        while True:
+            interagente.interagir_pagina_web(xpath='/html/body/header/nav[2]/ul/li[5]/a', acao="Clicar")
+            
+            interagente.interagir_pagina_web(xpath='/html/body/header/nav[2]/ul/li[5]/div/a[1]/span', acao="Clicar")
+
+            sleep(1)
+            elemento_esperado = interagente.interagir_pagina_web(xpath='/html/body/main/div/div/div/div/form/div/div/div/div[1]/div/div[2]/div[1]/input', acao="Retornar elemento")
+            if type(elemento_esperado) == WebElement:
+                break
         
         diretorio_processo = Path("Processos").resolve() / pasta
     
