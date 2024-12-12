@@ -35,7 +35,7 @@ def retornar_caminho(diretorio_processo, arquivo, extensao=".pdf"):
 def extrair_dados(conjunto_xml):
     numero_nf = conjunto_xml["Nfse"]["InfNfse"]["Numero"]
     observacoes_nfs = conjunto_xml["Nfse"]["InfNfse"]["DeclaracaoPrestacaoServico"]["InfDeclaracaoPrestacaoServico"]["Servico"]["Discriminacao"]
-    rf = observacoes_nfs[observacoes_nfs.find("RF: N")+6:-1].strip()
+    rf = observacoes_nfs[observacoes_nfs.find("RF: N")+6:].strip()
     cc = observacoes_nfs[observacoes_nfs.find("CC: ")+4:observacoes_nfs.find(" - Tipo:")].strip()
     vencto = observacoes_nfs[observacoes_nfs.find("Venctos:")+9:observacoes_nfs.find(" / ")].strip()
     return numero_nf, rf, cc, vencto
