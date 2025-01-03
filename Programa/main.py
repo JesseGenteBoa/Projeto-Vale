@@ -1,10 +1,13 @@
 from selenium.webdriver.remote.webelement import WebElement
 from datetime import datetime
+from tkinter import messagebox
 from pyautogui import hotkey, press
 from pyperclip import paste, copy
 from time import sleep
 from pathlib import Path
 from pypdf import PdfReader, PdfWriter
+import threading
+import queue
 import pandas as pd
 import atuadorWeb
 import xmltodict
@@ -16,15 +19,17 @@ import utils
 
 def executar_automacao(nf_inicial, nf_final, pasta_rf, caminho_arq_excel):
 
+    controle = queue.Queue()
+
     interagente = atuadorWeb.Interagente()
 
     
     interagente.abrir_pagina_web("https://tributacao.serra.es.gov.br:8080/tbserra/loginCNPJContribuinte.jsp#")
     
     
-    interagente.interagir_pagina_web(xpath='/html/body/div/div[1]/div/form/div/div[3]/input', acao="Escrever", texto="***********")
+    interagente.interagir_pagina_web(xpath='/html/body/div/div[1]/div/form/div/div[3]/input', acao="Escrever", texto="27.462.720/0001-25")
     
-    interagente.interagir_pagina_web(xpath='/html/body/div/div[1]/div/form/div/div[5]/input', acao="Escrever", texto="***********")
+    interagente.interagir_pagina_web(xpath='/html/body/div/div[1]/div/form/div/div[5]/input', acao="Escrever", texto="EQSeng547@")
     press("tab")
     
     
@@ -79,7 +84,7 @@ def executar_automacao(nf_inicial, nf_final, pasta_rf, caminho_arq_excel):
         if 'serra' in endereco_de_pesquisa:
             sleep(1.5)
             break
-        if aux == 12:
+        if aux == 30:
             hotkey('ctrl', 'w', interval=1)
             interagente.interagir_pagina_web(xpath='/html/body/div[2]/div/form/section[2]/div/div/div[2]/div/div[1]/div[2]/button[1]', acao="Clicar")
             sleep(1)
@@ -210,7 +215,7 @@ def executar_automacao(nf_inicial, nf_final, pasta_rf, caminho_arq_excel):
     pdf_arquivos = sorted([arquivo for arquivo in os.listdir("NFS")])
     xml_arquivos = sorted([arquivo for arquivo in os.listdir("XML")])
     lista_rf = [arquivo[arquivo.find("RF")+3:-4] + ".pdf" for arquivo in xml_arquivos]
-    
+
     
     for pdf_arquivo, xml_arquivo, rf_arquivo in zip(pdf_arquivos, xml_arquivos, lista_rf):
     
@@ -227,8 +232,13 @@ def executar_automacao(nf_inicial, nf_final, pasta_rf, caminho_arq_excel):
     
             shutil.copy(pdf_caminho, pasta_processo)
             shutil.copy(xml_caminho, pasta_processo)
-            shutil.copy(rf_caminho, pasta_processo)
-    
+            try:
+                shutil.copy(rf_caminho, pasta_processo)
+            except FileNotFoundError as e:
+                messagebox.showerror("Erro!", f"O arquivo RF {rf_arquivo.split('.')[0]} da {numero_nfs} não foi encontrado. Favor, adicione o arquivo na pasta de RFs e reinicie o processo.")
+                interagente.fechar_driver()
+                raise Exception(e)
+
     
     df = pd.read_excel(caminho_arq_excel)
     lista_de_cc = df.iloc[4:, 1].tolist()
@@ -244,93 +254,157 @@ def executar_automacao(nf_inicial, nf_final, pasta_rf, caminho_arq_excel):
     
     interagente.interagir_pagina_web(xpath='/html/body/div[1]/div[2]/div/div/div/a[1]', acao="Clicar")
     
-    interagente.interagir_pagina_web(xpath='/html/body/div[1]/div[2]/div/div/form/div[2]/div/div/div/input', acao="Escrever", texto="**********")
+    interagente.interagir_pagina_web(xpath='/html/body/div[1]/div[2]/div/div/form/div[2]/div/div/div/input', acao="Escrever", texto="lyssa@eqsengenharia.com.br")
     
-    interagente.interagir_pagina_web(xpath='/html/body/div[1]/div[2]/div/div/form/div[3]/div/div/div/input', acao="Escrever", texto="**********")
+    interagente.interagir_pagina_web(xpath='/html/body/div[1]/div[2]/div/div/form/div[3]/div/div/div/input', acao="Escrever", texto="EQSeng636@")
     
     interagente.interagir_pagina_web(xpath='/html/body/div[1]/div[2]/div/div/form/input[3]', acao="Clicar")
     
     
+    def verificar_portal():
+        while True:
+            sleep(3)
+            print("verificando\n")
+            elemento_esperado = interagente.interagir_pagina_web(xpath='/html/body/main/div/div[4]/div/div/div[1]/div[1]/ul/li[1]/a', acao="Retornar elemento", limitar_retorno=True)
+            if type(elemento_esperado) == WebElement:
+                print("pego no pulo\n")
+                controle.put("reinicie")
+
+
+    threading.Thread(target=verificar_portal, daemon=True).start()
     
     for i, pasta in enumerate(os.listdir("Processos")):
-    
-        while True:
-            interagente.interagir_pagina_web(xpath='/html/body/header/nav[2]/ul/li[5]/a', acao="Clicar")
-            
-            interagente.interagir_pagina_web(xpath='/html/body/header/nav[2]/ul/li[5]/div/a[1]/span', acao="Clicar")
-
-            sleep(1)
-            elemento_esperado = interagente.interagir_pagina_web(xpath='/html/body/main/div/div/div/div/form/div/div/div/div[1]/div/div[2]/div[1]/input', acao="Retornar elemento")
-            if type(elemento_esperado) == WebElement:
-                break
         
-        diretorio_processo = Path("Processos").resolve() / pasta
-    
-        caminho_pdf_nfs = utils.retornar_caminho(diretorio_processo, pasta[pasta.find("NFS"):pasta.find(" - RF")])
-        caminho_pdf_rf = utils.retornar_caminho(diretorio_processo, pasta[pasta.find(" - RF")+6:])
-        caminho_xml = utils.retornar_caminho(diretorio_processo, pasta, extensao=".xml")
-    
-    
-        def inserir_arquivos():
+        def alimentar_portal_vale():
+            print("alimentando")
+            while True:
+                interagente.interagir_pagina_web(xpath='/html/body/header/nav[2]/ul/li[5]/a', acao="Clicar", limitar_espera=True)
+                interagente.interagir_pagina_web(xpath='/html/body/header/nav[2]/ul/li[5]/div/a[1]/span', acao="Clicar", limitar_espera=True)
+
+                if controle.qsize() >= 1:
+                    press("f5")
+                    utils.zerar_lista_controle(controle)
+                    return alimentar_portal_vale()
+
+                sleep(1)
+                elemento_esperado = interagente.interagir_pagina_web(xpath='/html/body/main/div/div/div/div/form/div/div/div/div[1]/div/div[2]/div[1]/input', acao="Retornar elemento", limitar_espera=True)
+                if type(elemento_esperado) == WebElement:
+                    break
+
+            if controle.qsize() >= 1:
+                press("f5")
+                utils.zerar_lista_controle(controle)
+                return alimentar_portal_vale()
+
+            diretorio_processo = Path("Processos").resolve() / pasta
+        
+            caminho_pdf_nfs = utils.retornar_caminho(diretorio_processo, pasta[pasta.find("NFS"):pasta.find(" - RF")])
+            caminho_pdf_rf = utils.retornar_caminho(diretorio_processo, pasta[pasta.find(" - RF")+6:])
+            caminho_xml = utils.retornar_caminho(diretorio_processo, pasta, extensao=".xml")
+        
+        
+            def inserir_arquivos():
+                sleep(3)
+                if controle.qsize() >= 1:
+                    press("f5")
+                    utils.zerar_lista_controle(controle)
+                    return alimentar_portal_vale()
+
+                interagente.inserir_arquivo(xpath='/html/body/main/div/div/div/div/form/div/div/div/div[1]/div/div[2]/div[1]/input', xpath_de_espera="/html/body/main/div/div/div/div/form/div/div/div/div[1]/div/div[2]/div[1]/p/span/a", arquivo=caminho_xml)
+        
+                if interagente.verificar_instabilidade(verificar = "Um de cada vez"):
+                    return inserir_arquivos()
+                
+                interagente.inserir_arquivo(xpath='/html/body/main/div/div/div/div/form/div/div/div/div[1]/div/div[2]/div[2]/input', xpath_de_espera="/html/body/main/div/div/div/div/form/div/div/div/div[1]/div/div[2]/div[2]/p/span/a", arquivo=caminho_pdf_nfs)
+        
+                if interagente.verificar_instabilidade(verificar = "Um de cada vez"):
+                    return inserir_arquivos()
+
+                interagente.inserir_arquivo(xpath='/html/body/main/div/div/div/div/form/div/div/div/div[1]/div/div[2]/div[3]/input', xpath_de_espera="/html/body/main/div/div/div/div/form/div/div/div/div[1]/div/div[2]/div[3]/p/span/a", arquivo=caminho_pdf_rf)
+            
+                if interagente.verificar_instabilidade(verificar = "Todos de uma vez"):
+                    return inserir_arquivos()
+                
+
+            inserir_arquivos()
+        
+            interagente.interagir_pagina_web(xpath='/html/body/main/div/div/div/div/form/div/div/div/div[1]/div/div[3]/div/div/div[2]/div/div/div/div/div/input', acao="Escrever", texto=dict_de_emails[lista_cc[i]], limitar_espera=True)
+        
+            if controle.qsize() >= 1:
+                press("f5")
+                utils.zerar_lista_controle(controle)
+                return alimentar_portal_vale()
+
+            interagente.interagir_javaScript(venctos_convertidos, i, id= 'tax_document_net_due_date')
+        
+            if controle.qsize() >= 1:
+                press("f5")
+                utils.zerar_lista_controle(controle)
+                return alimentar_portal_vale()
+
+            interagente.interagir_pagina_web(xpath='/html/body/main/div/div/div/div/form/div/div/div/div[1]/div/div[7]/div/div/div[2]/div/div/div/div/div[2]/span/span[1]/span', acao="Clicar", limitar_espera=True)
+
+            if controle.qsize() >= 1:
+                press("f5")
+                utils.zerar_lista_controle(controle)
+                return alimentar_portal_vale()
+
+        
+            pdf = PdfReader(caminho_pdf_rf)
+        
+            pag = pdf.pages[0]
+            texto = pag.extract_text()
+        
+            informacao_bruta = texto[texto.find("(Cod. Município/Descrição Município/Estado)")+57:]
+        
+            informacao_bruta = informacao_bruta.replace('\n', ' ').strip()
+            partes = informacao_bruta.split(' / ')
+            cidade = partes[0].strip()
+            estado = partes[1].strip()
+        
+            municipio_prest_serv = f"{estado}, {cidade}"
+            interagente.interagir_pagina_web(xpath='/html/body/span/span/span[1]/input', acao="Escrever", texto=municipio_prest_serv, limitar_espera=True)
             sleep(3)
-            interagente.inserir_arquivo(xpath='/html/body/main/div/div/div/div/form/div/div/div/div[1]/div/div[2]/div[1]/input', xpath_de_espera="/html/body/main/div/div/div/div/form/div/div/div/div[1]/div/div[2]/div[1]/p/span/a", arquivo=caminho_xml)
-    
-            if interagente.verificar_instabilidade(verificar = "Um de cada vez"):
-                return inserir_arquivos()
-            
-            interagente.inserir_arquivo(xpath='/html/body/main/div/div/div/div/form/div/div/div/div[1]/div/div[2]/div[2]/input', xpath_de_espera="/html/body/main/div/div/div/div/form/div/div/div/div[1]/div/div[2]/div[2]/p/span/a", arquivo=caminho_pdf_nfs)
-    
-            if interagente.verificar_instabilidade(verificar = "Um de cada vez"):
-                return inserir_arquivos()
+            press("enter", interval=2)
 
-            interagente.inserir_arquivo(xpath='/html/body/main/div/div/div/div/form/div/div/div/div[1]/div/div[2]/div[3]/input', xpath_de_espera="/html/body/main/div/div/div/div/form/div/div/div/div[1]/div/div[2]/div[3]/p/span/a", arquivo=caminho_pdf_rf)
+            if controle.qsize() >= 1:
+                press("f5")
+                utils.zerar_lista_controle(controle)
+                return alimentar_portal_vale()
+
+            aux=0
+            while True:
+                elemento_municipio = interagente.interagir_pagina_web(xpath='/html/body/main/div/div/div/div/form/div/div/div/div[1]/div/div[7]/div/div/div[2]/div/div/div/div/div[2]/span/span[1]/span/span[1]', acao="Retornar elemento", limitar_espera=True)
+                municipio_no_campo = elemento_municipio.get_attribute('title')
+                if municipio_no_campo == cidade:
+                    break
+                aux+=1
+                sleep(1)
+                if aux == 6:
+                    break
+
+            sleep(2)
+            interagente.interagir_pagina_web(xpath='/html/body/main/div/div/div/div/form/div/div/div/div[2]/div/div/button', acao="Clicar", limitar_espera=True)
+
+            if controle.qsize() >= 1:
+                press("f5")
+                utils.zerar_lista_controle(controle)
+                return alimentar_portal_vale()
         
-            if interagente.verificar_instabilidade(verificar = "Todos de uma vez"):
-                return inserir_arquivos()
+            aceite = interagente.migrar_ao_frame(acao="Aceitar alerta")
+            if not aceite:
+                press("f5", interval=2)
+                return alimentar_portal_vale()
+        
+            interagente.interagir_pagina_web(xpath='/html/body/main/div/div[4]/div/div/div[1]/div[1]/ul/li[1]/a', acao="Esperar", limitar_espera=True)
+            sleep(3)
+
+
+        alimentar_portal_vale()
+        if controle.qsize() >= 1:
+            press("f5")
+            utils.zerar_lista_controle(controle)
             
-
-        inserir_arquivos()
-    
-        interagente.interagir_pagina_web(xpath='/html/body/main/div/div/div/div/form/div/div/div/div[1]/div/div[3]/div/div/div[2]/div/div/div/div/div/input', acao="Escrever", texto=dict_de_emails[lista_cc[i]])
-    
-        interagente.interagir_javaScript(venctos_convertidos, i, id= 'tax_document_net_due_date')
-    
-        interagente.interagir_pagina_web(xpath='/html/body/main/div/div/div/div/form/div/div/div/div[1]/div/div[7]/div/div/div[2]/div/div/div/div/div[2]/span/span[1]/span', acao="Clicar")
-    
-    
-        pdf = PdfReader(caminho_pdf_rf)
-    
-        pag = pdf.pages[0]
-        texto = pag.extract_text()
-    
-        informacao_bruta = texto[texto.find("(Cod. Município/Descrição Município/Estado)")+57:]
-    
-        informacao_bruta = informacao_bruta.replace('\n', ' ').strip()
-        partes = informacao_bruta.split(' / ')
-        cidade = partes[0].strip()
-        estado = partes[1].strip()
-    
-        municipio_prest_serv = f"{estado}, {cidade}"
-        interagente.interagir_pagina_web(xpath='/html/body/span/span/span[1]/input', acao="Escrever", texto=municipio_prest_serv)
-        sleep(3)
-        press("enter", interval=1)
-
-        aux=0
-        while True:
-            elemento_municipio = interagente.interagir_pagina_web(xpath='/html/body/main/div/div/div/div/form/div/div/div/div[1]/div/div[7]/div/div/div[2]/div/div/div/div/div[2]/span/span[1]/span/span[1]', acao="Retornar elemento")
-            municipio_no_campo = elemento_municipio.get_attribute('title')
-            if municipio_no_campo == cidade:
-                break
-            aux+=1
-            sleep(1)
-            if aux == 6:
-                break
-
-        interagente.interagir_pagina_web(xpath='/html/body/main/div/div/div/div/form/div/div/div/div[2]/div/div/button', acao="Clicar")
-    
-        interagente.migrar_ao_frame(acao="Aceitar alerta")
-    
-        interagente.interagir_pagina_web(xpath='/html/body/main/div/div[4]/div/div/div[1]/div[1]/ul/li[1]/a', acao="Esperar")
-        sleep(3)
-           
     sleep(10)
+
+ 
