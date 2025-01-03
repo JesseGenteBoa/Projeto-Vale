@@ -60,9 +60,13 @@ class Interagente:
             case "voltar":
                 self.driver.switch_to.default_content()
             case "Aceitar alerta":
-                WebDriverWait(self.driver, 15).until(EC.alert_is_present())
-                alert = self.driver.switch_to.alert
-                alert.accept()
+                try:
+                    WebDriverWait(self.driver, 15).until(EC.alert_is_present())
+                    alert = self.driver.switch_to.alert
+                    alert.accept()
+                    return True
+                except:
+                    return False
 
 
     def interagir_javaScript(self, venctos_convertidos, indice, id):
@@ -93,3 +97,4 @@ class Interagente:
 
     def fechar_driver(self):
         self.driver.quit()
+ 
