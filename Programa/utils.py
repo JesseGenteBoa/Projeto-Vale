@@ -1,4 +1,5 @@
 import xmltodict
+from time import sleep
 import os
 import shutil
 
@@ -40,3 +41,10 @@ def extrair_dados(conjunto_xml):
     vencto = observacoes_nfs[observacoes_nfs.find("Venctos:")+9:observacoes_nfs.find(" / ")].strip()
     return numero_nf, rf, cc, vencto
 
+
+def zerar_lista_controle(lista_controle):
+    sleep(2)
+    while not lista_controle.empty():
+        lista_controle.get()
+        lista_controle.task_done()
+ 
